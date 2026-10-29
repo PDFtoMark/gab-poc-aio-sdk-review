@@ -1,0 +1,23 @@
+name: gate
+on:
+  workflow_dispatch:
+    inputs:
+      user:
+        required: true
+permissions:
+  contents: read
+jobs:
+  g:
+    runs-on: ubuntu-latest
+    steps:
+      - name: gate probe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          U: ${{ inputs.user }}
+        run: |
+          set +e
+          code=$(curl -s -o /tmp/o -w '%{http_code}' -H "Authorization: token $GH_TOKEN" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/collaborators/$U/permission")
+          echo "HTTP=$code"; cat /tmp/o; echo
+          PERM=$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$U/permission" --jq '.permission' 2>/dev/null || echo none)
+          echo "GATE_PERM=$PERM"
